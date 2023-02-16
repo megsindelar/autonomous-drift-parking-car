@@ -17,6 +17,11 @@ class PID{
 
         explicit PID(double Kp, double Ki, double Kd);
 
+        // P_update(double Kp);
+
+        // I_update(double Ki);
+
+        // D_update(double Kd);
 };
 
 #endif
