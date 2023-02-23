@@ -1,19 +1,13 @@
-####################################
-# Copywrite from caipeide drift_drl
-####################################
-
-################################################################
-# look at environment.py to get lots of states and calculations
-#################################################################
-
 import sys
+from environment import *
 from SACAgent import *
 import time
 import random
+# import pygame
 import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.patches as patches
-from agents.navigation.basic_agent import BasicAgent
+# from agents.navigation.basic_agent import BasicAgent
 
 ########SAC#######
 if __name__ == "__main__":
@@ -50,12 +44,11 @@ if __name__ == "__main__":
 	# print(2)
 	# pygame.font.init()
 	# print(3)
-	# env = environment(traj_num=1)
+	env = environment(traj_num=1)
 
 	
 	action_dim = 2
-	# state = env.getState()
-    # TODO: add state
+	state = env.getState()
 	state_dim = len(state)
 	print('action_dimension:', action_dim, ' & state_dimension:', state_dim)
 
@@ -73,9 +66,7 @@ if __name__ == "__main__":
 	print("====================================")
 
 	ep_r = 0###expectation of reward R
-    #iterations is how many training loops?
 	for i in range(args.iteration):
-        # reinitialize
 		state = env.reset(traj_num=1, randomPosition=False)
 		t0 = time.time()
 		first_step_pass = False
@@ -88,29 +79,24 @@ if __name__ == "__main__":
 
 		while(True):
 			count += 1
-			# env.render()
+			env.render()
 			# plt.clf()
 
-            ########################################################
-            # wait for gazebo to be ready before start training
-            #######################################################
 			# start training when the carla env is ready, before that we loop:
-			# tmp_control = env.world.player.get_control()
-			# if tmp_control.throttle == 0 and carla_startFlag==False:
-			# 	tmp_control = carla.VehicleControl(
-			# 					throttle = 0.5,
-			# 					steer = 0,
-			# 					brake = 0.0,
-			# 					hand_brake = False,
-			# 					reverse = False,
-			# 					manual_gear_shift = False,
-			# 					gear = 0)
-			# 	env.world.player.apply_control(tmp_control)
-			# 	continue
-			# carla_startFlag = True
+			tmp_control = env.world.player.get_control()
+			if tmp_control.throttle == 0 and carla_startFlag==False:
+				tmp_control = carla.VehicleControl(
+								throttle = 0.5,
+								steer = 0,
+								brake = 0.0,
+								hand_brake = False,
+								reverse = False,
+								manual_gear_shift = False,
+								gear = 0)
+				env.world.player.apply_control(tmp_control)
+				continue
+			carla_startFlag = True
 
-
-            # reset collision history
 			if time.time()-t0 < 0.5:
 				env.world.collision_sensor.history = []
 			if i % 10 != 0 or agent.replay_buffer.num_transition <= 3000:
@@ -133,10 +119,7 @@ if __name__ == "__main__":
 							agent.writer.add_scalar('Control/iteration_'+str(i)+'/steer', steer, global_step = count)
 							agent.writer.add_scalar('Control/iteration_'+str(i)+'/throttle', throttle, global_step = count)	
 
-                    ###########################
-                    # output these from gazebo
-                    ###########################
-					# next_state, reward, collisionFlag, destinationFlag, awayFlag, control = env.step(steer, throttle)
+					next_state, reward, collisionFlag, destinationFlag, awayFlag, control = env.step(steer, throttle)
 					next_state = np.reshape(next_state, [1, state_dim])
 					
 					ep_r += reward
@@ -152,11 +135,8 @@ if __name__ == "__main__":
 					tState = next_state
 					
 					
-                    ###########################
-                    # get velocities
-                    ###########################
-					# vx = env.velocity_local[0]
-					# vy = env.velocity_local[1]
+					vx = env.velocity_local[0]
+					vy = env.velocity_local[1]
 					speed += np.sqrt(vx*vx + vy*vy)
 					cte += tState[0,2]
 					hae += abs(tState[0,4])
@@ -186,10 +166,7 @@ if __name__ == "__main__":
 							agent.writer.add_scalar('TEST/Control/iteration_'+str(i)+'/steer', steer, global_step = count)
 							agent.writer.add_scalar('TEST/Control/iteration_'+str(i)+'/throttle', throttle, global_step = count)	
 
-                    ###########################
-                    # output these from gazebo
-                    ###########################
-					# next_state, reward, collisionFlag, destinationFlag, awayFlag, control = env.step(steer, throttle)
+					next_state, reward, collisionFlag, destinationFlag, awayFlag, control = env.step(steer, throttle)
 					next_state = np.reshape(next_state, [1, state_dim])
 					ep_r += reward
 					endFlag = collisionFlag or destinationFlag or awayFlag
@@ -198,11 +175,8 @@ if __name__ == "__main__":
 					
 					endFlag = collisionFlag or destinationFlag or awayFlag
 					
-                    ###########################
-                    # get velocities
-                    ###########################
-					# vx = env.velocity_local[0]
-					# vy = env.velocity_local[1]
+					vx = env.velocity_local[0]
+					vy = env.velocity_local[1]
 					speed += np.sqrt(vx*vx + vy*vy)
 					cte += tState[0,2]
 					hae += abs(tState[0,4])
@@ -254,11 +228,8 @@ if __name__ == "__main__":
 		agent.writer.add_scalar('Metrics/avg_heading_error', hae, global_step=i)
 		agent.writer.add_scalar('Metrics/reward_every_second', ep_r/time_cost, global_step=i)
 
-        ###########################
-        # get these from gazebo
-        ###########################
-		# agent.writer.add_scalar('Physics/Tire_friction', env.tire_friction, global_step = i)
-		# agent.writer.add_scalar('Physics/Mass', env.mass, global_step=i)
+		agent.writer.add_scalar('Physics/Tire_friction', env.tire_friction, global_step = i)
+		agent.writer.add_scalar('Physics/Mass', env.mass, global_step=i)
 		
 
 		if i % 10 ==0 and agent.replay_buffer.num_transition > 3000:
@@ -269,9 +240,6 @@ if __name__ == "__main__":
 			agent.writer.add_scalar('Metrics_test/avg_heading_error', hae, global_step=i)
 			agent.writer.add_scalar('Metrics_test/reward_every_second', ep_r/time_cost, global_step=i)
 
-            ###########################
-            # get these from gazebo
-            ###########################
 			agent.writer.add_scalar('Physics_test/Tire_friction', env.tire_friction, global_step = i)
 			agent.writer.add_scalar('Physics_test/Mass', env.mass, global_step=i)
 		ep_r = 0

@@ -1,19 +1,16 @@
-####################################
-# Copywrite from caipeide drift_drl
-####################################
-
 import sys
+from environment import *
 import time
 import random
+# import pygame
 import csv
 import os
 import torch
 from tools import SAC_Actor
 from tools import getHeading, bool2num
 import argparse
-import numpy as np
 
-# np.random.seed(1234)
+np.random.seed(1234)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 parser = argparse.ArgumentParser()
@@ -25,32 +22,20 @@ model = args.model
 if __name__ == "__main__":
 
 	
-	# if model != 'sac-stg2' and model != 'sac-stg1' and model != 'sac-wos':
-	# 	print('Wrong model name :( ')
-	# else:
-	# 	pygame.init()
-	# 	pygame.font.init()
+	if model != 'sac-stg2' and model != 'sac-stg1' and model != 'sac-wos':
+		print('Wrong model name :( ')
+	else:
+		# pygame.init()
+		# pygame.font.init()
 
-	# 	if model == 'sac-stg2' or model == 'sac-stg1':
-	# 		env = environment(traj_num=6,model='sac')
-	# 	else:
-	# 		env = environment(traj_num=6,model='sac-wos')
+		if model == 'sac-stg2' or model == 'sac-stg1':
+			env = environment(traj_num=6,model='sac')
+		else:
+			env = environment(traj_num=6,model='sac-wos')
 
 		
 		action_dim = 2 # steer, throttle
-        ###########################
-        # get velocities
-        ###########################
-		# state = env.getState()
-            # state includes:
-                # 1. location
-                # 2. ang_vel
-                # 3. tranformation
-                # 4. yaw (with overflow angle correction)
-                # 5. update local history and future way with location
-                # 6. update local velocity
-                # 7. overflow yaw degree correction
-                # 8. calculate state (figure out collectFlag and calculate/return new state with reward and collision)
+		state = env.getState()
 		state_dim = len(state)
 		print('action_dimension:', action_dim, ' --- state_dimension:', state_dim)
 		
@@ -97,34 +82,28 @@ if __name__ == "__main__":
 			writer = csv.writer(save_file)
 			writer.writerow(headers)
 
-            ###########################
-            # reset
-            ###########################
-			# env.reset(traj_num=6, testFlag=True, test_friction=setup[0], test_mass=setup[1])
+			env.reset(traj_num=6, testFlag=True, test_friction=setup[0], test_mass=setup[1])
 
 			t0 = time.time()
 			first_step_pass = False
 
 			while(True):
-				# env.render()
+				env.render()
 
-                ########################################################
-                # wait for gazebo to be ready before start training
-                #######################################################
 				# make sure the connection with carla is ok
-				# tmp_control = env.world.player.get_control()
-				# if tmp_control.throttle == 0 and carla_startFlag==False:
-				# 	tmp_control = carla.VehicleControl(
-				# 					throttle = 0.5,
-				# 					steer = 0,
-				# 					brake = 0.0,
-				# 					hand_brake = False,
-				# 					reverse = False,
-				# 					manual_gear_shift = False,
-				# 					gear = 0)
-				# 	env.world.player.apply_control(tmp_control)
-				# 	continue
-				# carla_startFlag = True
+				tmp_control = env.world.player.get_control()
+				if tmp_control.throttle == 0 and carla_startFlag==False:
+					tmp_control = carla.VehicleControl(
+									throttle = 0.5,
+									steer = 0,
+									brake = 0.0,
+									hand_brake = False,
+									reverse = False,
+									manual_gear_shift = False,
+									gear = 0)
+					env.world.player.apply_control(tmp_control)
+					continue
+				carla_startFlag = True
 
 				if time.time()-t0 < 0.5:
 					# make sure the collision sensor is empty
@@ -150,27 +129,17 @@ if __name__ == "__main__":
 
 					# prepare the state information to be saved
 					t = time.time() - t0
-                    ########################################################
-                    # get car location and heading
-                    #######################################################
-					# location = env.world.player.get_location()
+					location = env.world.player.get_location()
 					wx = location.x
 					wy = location.y
-					# course = getHeading(env)
-
-                    ########################################################
-                    # get velocities
-                    #######################################################
-					# vx = env.velocity_local[0]
-					# vy = env.velocity_local[1]
+					course = getHeading(env)
+					vx = env.velocity_local[0]
+					vy = env.velocity_local[1]
 					speed = np.sqrt(vx*vx + vy*vy)
-					# slip_angle = env.velocity_local[2]
+					slip_angle = env.velocity_local[2]
 					cte = tState[0,2]
 					cae = tState[0,4]
-                    ########################################################
-                    # index
-                    #######################################################
-					# traj_index = env.traj_index
+					traj_index = env.traj_index
 					steer = control.steer
 					throttle = control.throttle
 					cf = bool2num(collisionFlag)
