@@ -1,0 +1,230 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ddrive">
+<xacro:property name="yaml_file" value="$(find diff_drive)/ddrive.yaml" />
+<xacro:property name="props" value="${xacro.load_yaml(yaml_file)}" />
+<xacro:property name="start" value="${props['/**']}"/>
+<xacro:property name="ros__parameters" value="${start['ros__parameters']}"/>
+<xacro:property name="caster_rad" value="${ros__parameters['caster_rad']}"/>
+<xacro:property name="stem_h" value="${ros__parameters['stem_h']}"/>
+<xacro:property name="front_wheel_rad" value="${ros__parameters['front_wheel_rad']}"/>
+<xacro:property name="rear_wheel_rad" value="${ros__parameters['rear_wheel_rad']}"/>
+<xacro:property name="rob_height" value="${ros__parameters['rob_height']}"/>
+<xacro:property name="robot_width" value="${ros__parameters['robot_width']}"/>
+<xacro:property name="robot_length" value="${ros__parameters['robot_length']}"/>
+<xacro:property name="robot_mass" value="${ros__parameters['robot_mass']}"/>
+<xacro:property name="f_wheel_len" value="${ros__parameters['f_wheel_len']}"/>
+<xacro:property name="r_wheel_len" value="${ros__parameters['r_wheel_len']}"/>
+<xacro:property name="f_wheel_mass" value="${ros__parameters['f_wheel_mass']}"/>
+<xacro:property name="r_wheel_mass" value="${ros__parameters['r_wheel_mass']}"/>
+<xacro:property name="stem_rad" value="${ros__parameters['stem_rad']}"/>
+<xacro:property name="stem_mass" value="${ros__parameters['stem_mass']}"/>
+<xacro:property name="caster_mass" value="${ros__parameters['caster_mass']}"/>
+<xacro:property name="caster_len" value="${ros__parameters['caster_len']}"/>
+
+<xacro:include filename="$(find diff_drive)/ddrive.gazebo.xacro" />
+
+  <!-- Define colors -->
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+
+  <material name="orange">
+    <color rgba="${255/255} ${108/255} ${10/255} 1.0"/>
+  </material>
+
+  <material name="cream">
+    <color rgba="${255/255} ${189/255} ${243/255} 1.0"/>
+  </material>
+
+  <material name="pink">
+    <color rgba="${253/255} ${112/255} ${203/255} 1.0"/>
+  </material>
+
+  <material name="blue">
+    <color rgba="${149/255} ${185/255} ${240/255} 1.0"/>
+  </material>
+
+  <material name="purple">
+    <color rgba="${137/255} ${65/255} ${222/255} 1.0"/>
+  </material>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${robot_length} ${robot_width} ${rob_height}"/>
+      </geometry>
+      <material name="purple"/>
+    </visual>
+    <collision>
+        <geometry>
+          <box size="${robot_length} ${robot_width} ${rob_height}"/>
+        </geometry>
+    </collision>
+    <inertial>
+        <mass value = "${robot_mass}"/>
+        <inertia ixx="${(1/12)*robot_mass*(robot_width**2 + rob_height**2)}"
+               ixy="0"
+               ixz="0"
+               iyy="${(1/12)*robot_mass*(robot_length**2 + rob_height**2)}"
+               iyz="0"
+               izz="${(1/12)*robot_mass*(robot_length**2 + robot_width**2)}" />
+    </inertial>
+  </link>
+
+  <xacro:macro name="front_wheel" params="prefix reflect_x">
+    <link name="${prefix}_front_wheel">
+      <visual>
+        <geometry>
+          <cylinder radius="${front_wheel_rad}" length="${f_wheel_len}"/>
+        </geometry>
+        <material name="cream"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${front_wheel_rad}" length="${f_wheel_len}"/>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.01</mu>
+              <mu2>0.01</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <inertial>
+        <mass value = "${f_wheel_mass}"/>
+        <inertia ixx="${(1/12)*f_wheel_mass*((3*front_wheel_rad**2)+f_wheel_len**2)}" 
+                ixy="0.0" 
+                ixz="0.0" 
+                iyy="${(1/12)*f_wheel_mass*((3*front_wheel_rad**2)+f_wheel_len**2)}" 
+                iyz="0.0" 
+                izz="${(1/2)*f_wheel_mass*(front_wheel_rad**2)}" />
+      </inertial>
+    </link>
+
+    <joint name="base_to_${prefix}_front_wheel" type="continuous">
+      <axis xyz="0 0 1"/>
+      <origin rpy="1.57075 0 0" 
+            xyz="${2*(robot_length/2)/3} ${reflect_x * ((robot_width/2) + (f_wheel_len/2))} 0"/>
+      <parent link="base_link"/>
+      <child link="${prefix}_front_wheel"/>
+    </joint>
+  </xacro:macro>
+  <xacro:front_wheel prefix="right" reflect_x="1" />
+  <xacro:front_wheel prefix="left" reflect_x="-1" />
+
+  <xacro:macro name="rear_wheel" params="prefix reflect_x">
+    <link name="${prefix}_rear_wheel">
+      <visual>
+        <geometry>
+          <cylinder radius="${rear_wheel_rad}" length="${r_wheel_len}"/>
+        </geometry>
+        <material name="cream"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${rear_wheel_rad}" length="${r_wheel_len}"/>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.01</mu>
+              <mu2>0.01</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <inertial>
+        <mass value = "${r_wheel_mass}"/>
+        <inertia ixx="${(1/12)*r_wheel_mass*((3*rear_wheel_rad**2)+r_wheel_len**2)}" 
+                ixy="0.0" 
+                ixz="0.0" 
+                iyy="${(1/12)*r_wheel_mass*((3*rear_wheel_rad**2)+r_wheel_len**2)}" 
+                iyz="0.0" 
+                izz="${(1/2)*r_wheel_mass*(rear_wheel_rad**2)}" />
+      </inertial>
+    </link>
+
+    <joint name="base_to_${prefix}_rear_wheel" type="continuous">
+      <axis xyz="0 0 1"/>
+      <origin rpy="1.57075 0 0" 
+            xyz="${-2*(robot_length/2)/3} ${reflect_x * ((robot_width/2) + (r_wheel_len/2))} 0"/>
+      <parent link="base_link"/>
+      <child link="${prefix}_rear_wheel"/>
+    </joint>
+  </xacro:macro>
+  <xacro:rear_wheel prefix="right" reflect_x="1" />
+  <xacro:rear_wheel prefix="left" reflect_x="-1" />
+
+  <!-- <xacro:macro name="stem" params="prefix reflect">
+    <link name="${prefix}_stem">
+      <visual>
+        <geometry>
+          <cylinder radius="${stem_rad}" length="${stem_h}"/>
+        </geometry>
+        <material name="cream"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${stem_rad}" length="${stem_h}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value = "${stem_mass}"/>
+        <inertia ixx="${(1/12)*stem_mass*((3*stem_rad**2) + stem_h**2)}" 
+                ixy="0.0" 
+                ixz="0.0" 
+                iyy="${(1/12)*stem_mass*((3*stem_rad**2) + stem_h**2)}" 
+                iyz="0.0" 
+                izz="${(1/2)*stem_mass*(stem_rad**2)}" />
+      </inertial>
+    </link> -->
+
+    <!-- <joint name="base_to_${prefix}_stem" type="continuous">
+      <axis xyz="0 0 1"/>
+      <origin rpy="0 0 0" 
+            xyz="${-2*(robot_length/2)/3} 0 ${reflect * ((rob_height/2) + (stem_h/2))}"/>
+      <parent link="base_link"/>
+      <child link="${prefix}_stem"/>
+    </joint>
+  </xacro:macro>
+  <xacro:stem prefix="top" reflect="1" />
+  <xacro:stem prefix="bottom" reflect="-1" />
+
+  <xacro:macro name="caster" params="prefix reflect">
+    <link name="${prefix}_caster">
+      <visual>
+        <geometry>
+          <cylinder radius="${caster_rad}" length="${caster_len}"/>
+        </geometry>
+        <material name="cream"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${caster_rad}" length="${caster_len}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value = "${caster_mass}"/>
+        <inertia ixx="${(1/12)*caster_mass*((3*caster_rad**2) + caster_len**2)}" 
+                ixy="0.0" 
+                ixz="0.0" 
+                iyy="${(1/12)*caster_mass*((3*caster_rad**2) + caster_len**2)}" 
+                iyz="0.0" 
+                izz="${(1/2)*caster_mass*(caster_rad**2)}" />
+      </inertial>
+    </link>
+
+    <joint name="base_to_${prefix}_caster" type="continuous">
+      <axis xyz="0 0 1"/>
+      <origin rpy="1.57075 0 0"
+            xyz="${-2*(robot_length/2)/3} 0 ${reflect*((rob_height/2) + stem_h + caster_rad)}"/>
+      <parent link="base_link"/>
+      <child link="${prefix}_caster"/>
+    </joint>
+  </xacro:macro>
+  <xacro:caster prefix="top" reflect="1" />
+  <xacro:caster prefix="bottom" reflect="-1" /> -->
+  
+</robot>
