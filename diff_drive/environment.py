@@ -1,99 +1,141 @@
+import rclpy
+from rclpy.node import Node
+from enum import Enum, auto
 
-from __future__ import print_function
+
+# from __future__ import print_function
 import time
-import collections
-import datetime
-import glob
-import logging
+# import collections
+# import datetime
+# import glob
+# import logging
 import math
-import os
-import random
-import re
-import sys
-import weakref
-try:
-    import pygame
-except ImportError:
-    raise RuntimeError('cannot import pygame, make sure pygame package is installed')
-try:
-    import numpy as np
-except ImportError:
-    raise RuntimeError(
-        'cannot import numpy, make sure numpy package is installed')
-import carla
-from carla import ColorConverter as cc
-from agents.navigation.roaming_agent import RoamingAgent
-from agents.navigation.basic_agent import BasicAgent
-from carla_tools import *
-import argparse
+# import os
+# import random
+# import re
+# import sys
+# import weakref
+import numpy as np
+# try:
+#     import pygame
+# except ImportError:
+#     raise RuntimeError('cannot import pygame, make sure pygame package is installed')
+# try:
+#     import numpy as np
+# except ImportError:
+#     raise RuntimeError(
+#         'cannot import numpy, make sure numpy package is installed')
+# import carla
+# from carla import ColorConverter as cc
+# from agents.navigation.roaming_agent import RoamingAgent
+# from agents.navigation.basic_agent import BasicAgent
+# from carla_tools import *
+# import argparse
 from collections import deque
 import pandas as pd
 
 step_T_bound = (0.6,1)		# Boundary of throttle values
 step_S_bound = (-0.8,0.8)	# Boundary of the steering angle values
 
-def draw_waypoints(world, route):
-	x0 = route[0,0]
-	y0 = route[0,1]
-	for k in range(1,route.shape[0]):
-		r = route[k,:]
-		x1 = r[0]
-		y1 = r[1]
-		dx = x1-x0
-		dy = y1-y0
-		if math.sqrt(dx*dx+dy*dy) > 30:  # original 2.5
-			x0 = x1
-			y0 = y1
-			begin = carla.Location(x = x1,y = y1, z = 0.2)
-			angle = math.radians(r[2])
-			end = begin + carla.Location(x=6*math.cos(angle), y=6*math.sin(angle))
-			world.debug.draw_arrow(begin, end, arrow_size=12,life_time=90, color=carla.Color(238,18, 137,0))
+class start_location(Enum):
+	x = auto()
+	y = auto()
+	z = auto()
 
-class environment():
-	def __init__(self, throttleSize=4, steerSize=9, traj_num = 0, collectFlag = False, model='dqn', vehicleNum=1):
-		
-		log_level = logging.INFO
-		
-		logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
+class start_rotation(Enum):
+	pitch = auto()
+	yaw = auto()
+	roll = auto()
 
-		logging.info('listening to server %s:%s', '127.0.0.1', 2000)
+class vehicle_control(Enum):
+	throttle = auto()
+	steer = auto()
+	brake = auto()
+	hand_brake = False
+	reverse = False
+	manual_gear_shift = False
+	gear = auto()
+
+# def Transform(location, rotation):
+	
+
+
+
+#######################################
+# as of now, I don't think I need this:
+#######################################
+# def draw_waypoints(world, route):
+	# x0 = route[0,0]
+	# y0 = route[0,1]
+	# for k in range(1,route.shape[0]):
+	# 	r = route[k,:]
+	# 	x1 = r[0]
+	# 	y1 = r[1]
+	# 	dx = x1-x0
+	# 	dy = y1-y0
+	# 	if math.sqrt(dx*dx+dy*dy) > 30:  # original 2.5
+	# 		x0 = x1
+	# 		y0 = y1
+	# 		# beginning and end car locations
+	# 		# begin = carla.Location(x = x1,y = y1, z = 0.2)
+			
+	# 		angle = math.radians(r[2])
+	# 		# end = begin + carla.Location(x=6*math.cos(angle), y=6*math.sin(angle))
+
+	# 		# This is a carla sim debug option that seems unnecessary for me
+	# 		# world.debug.draw_arrow(begin, end, arrow_size=12,life_time=90, color=carla.Color(238,18, 137,0))
+
+class Environment(Node):
+	def __init__(self) #, throttleSize=4, steerSize=9, traj_num = 0, collectFlag = False, model='dqn', vehicleNum=1):
+		super().__init__('environment')
 		
-		self.refreshRoute(traj_num, vehicleNum)  # a series of caral.transform
-		self.vehicleNum = vehicleNum
+		# log_level = logging.INFO
+		
+		# logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
+
+		# logging.info('listening to server %s:%s', '127.0.0.1', 2000)
+		
+		# self.refreshRoute(traj_num, vehicleNum)  # a series of caral.transform
+		# self.vehicleNum = vehicleNum
+		# load parameters from yaml
+        
 
 		if not collectFlag:
-			start_location = carla.Location(x = self.route[0,0], y = self.route[0,1], z = 0.1)
-			start_rotation = carla.Rotation(pitch = 0, yaw = self.route[0,2], roll = 0)
+			start_location.x = self.route[0,0]
+			start_location.y = self.route[0,1]
+			start_location.z = 0.1
+			start_rotation.pitch = 0
+			start_rotation.yaw = self.route[0,2]
+			start_rotation.roll = 0
 		else:
-			start_location = carla.Location()
-			start_rotation = carla.Rotation()
+			# start_location = carla.Location()
+			# start_rotation = carla.Rotation()
+			start_location.x = 0.0
+			start_location.y = 0.0
+			start_location.z = 0.0
+			start_rotation.pitch = 0.0
+			start_rotation.yaw = 0.0
+			start_rotation.roll = 0.0
 		
-		self.start_point = carla.Transform(location = start_location, rotation = start_rotation)  # type : Transform (location, rotation)
+		# self.start_point = carla.Transform(location = start_location, rotation = start_rotation)  # type : Transform (location, rotation)
+		self.start_point = Transform(start_location, start_rotation)
 		
-		self.client = carla.Client('127.0.0.1', 2000)
-		self.client.set_timeout(4.0)
-		self.display = pygame.display.set_mode((1280, 720),pygame.HWSURFACE | pygame.DOUBLEBUF)
-		self.hud = HUD(1280, 720)
-		self.world = World(self.client.get_world(), self.hud, 'vehicle.*', self.start_point, vehicleNum)
-		self.clock = pygame.time.Clock()
-		self.minDis = 0
+		# self.minDis = 0
 		self.collectFlag = collectFlag
 		self.traj_drawn_list = []
 		
-
-		self.control = carla.VehicleControl(
-							throttle = 1,
-							steer = 0.0,
-							brake = 0.0,
-							hand_brake = False,
-							reverse = False,
-							manual_gear_shift = False,
-							gear = 0)
+		vehicle_control.throttle = 1
+		vehicle_control.steer = 0.0
+		vehicle_control.brake = 0.0
+		vehicle_control.hand_brake = False
+		vehicle_control.reverse = False
+		vehicle_control.manual_gear_shift = False
+		vehicle_control.gear = 0
 		
 		self.destinationFlag = False
 		self.away = False
 		self.collisionFlag = False
-		self.waypoints_ahead = [] 
+		self.waypoints_ahead = []
 		self.waypoints_neighbor = [] 
 		self.steer_history = deque(maxlen=20)
 		self.throttle_history = deque(maxlen=20)
@@ -125,7 +167,6 @@ class environment():
 		self.e_vy = 0
 		self.e_d_vy = 0
 
-
 		self.tg = 0
 		self.clock_history = 0 # pop the current location into self.waypoints_history every 0.2s
 
@@ -141,13 +182,14 @@ class environment():
 		self.tire_friction_array = np.arange(3,4.1,0.1) # [3,4], 11D
 		self.mass_array = np.arange(1700,1910,50) # array([1700, 1750, 1800, 1850, 1900])
 
-		self.ori_physics_control = self.world.player.get_physics_control()
+		# self.ori_physics_control = self.world.player.get_physics_control()
+		# get physics here from xacro file
 		self.wheel_fl = self.ori_physics_control.wheels[0]
 		self.wheel_fr = self.ori_physics_control.wheels[1]
 		self.wheel_rl = self.ori_physics_control.wheels[2]
 		self.wheel_rr = self.ori_physics_control.wheels[3]
 
-		self.world.world.set_weather(carla.WeatherParameters.ClearNoon)
+		# self.world.world.set_weather(carla.WeatherParameters.ClearNoon)
 
 	def refreshRoute(self, traj_num, vehicleNum):
 		if vehicleNum == 1:

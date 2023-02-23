@@ -16,3 +16,7 @@
         robot_width: 0.3
         robot_length: 0.7
         robot_mass: 1.0
+        f_wheel_friction_mu: 0.01
+        r_wheel_friction_mu2: 0.01
+        r_wheel_friction_mu: 0.01
+        r_wheel_friction_mu2: 0.01
