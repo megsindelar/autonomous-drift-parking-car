@@ -49,19 +49,31 @@ import pandas as pd
 step_T_bound = (0.6,1)		# Boundary of throttle values
 step_S_bound = (-0.8,0.8)	# Boundary of the steering angle values
 
-class start_location(Enum):
-	x = auto()
-	y = auto()
-	z = auto()
+class start_location:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
 
-class start_rotation(Enum):
-	pitch = auto()
-	yaw = auto()
-	roll = auto()
+    def get_x(self):
+        return self.x
+    
+    def get_y(self):
+        return self.y
 
-class Transform(Enum):
-    location = start_location().value
-    rotation = start_rotation().value
+class start_rotation:
+    def __init__(self, pitch, yaw, roll):
+        self.pitch = pitch
+        self.yaw = yaw
+        self.roll = roll
+    
+    def get_yaw(self):
+        return self.yaw
+
+class Transform:
+    def __init__(self, x, y, z, pitch, yaw, roll):
+        super().__init__(x, y, z)
+        super().__init__(pitch, yaw, roll)
 
 class vehicle_control(Enum):
 	throttle = auto()
@@ -442,7 +454,7 @@ class Environment(Node):
     def getState(self):
         # TODO need publishers and subscribers or services and clients
         # location = self.world.player.get_location()
-        location = Transform.location.value
+        location = Transform()
         location.x = self.config.x
         location.y = self.config.y
 
@@ -450,9 +462,8 @@ class Environment(Node):
         angular_velocity = self.vel.angular
 
         # transform = self.world.player.get_transform()
-        transform = Transform.rotation.value
 
-        ego_yaw = transform.yaw
+        ego_yaw = self.config.yaw
         if ego_yaw < 0:
             ego_yaw += 360
         if ego_yaw > 360:

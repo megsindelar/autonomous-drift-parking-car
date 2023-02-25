@@ -27,7 +27,7 @@ setup(
         'console_scripts': [
             'drift=drift.train:train_entry',
             'environment=drift.environment:env_entry',
-            'train=drift.train:train_entry'
+            # 'train=drift.train:train_entry'
         ],
     },
 )
