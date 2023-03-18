@@ -2,6 +2,7 @@
 
 The purpose of this project was to create a drifting car that powerslides into a parallel parking spot.
 
+https://user-images.githubusercontent.com/87098227/226077785-7c41633c-0b24-44a4-a2bb-61c67c5146b3.mp4
 
 
 For my system I created a feedforward PI controller in a multi-threaded C++ program to read feedback from steer and throttle encoders. This script is in the main_script folder. The controller follows multiple different reference trajectories to slide into the parking spot. To compile and run the script, use these commands:
