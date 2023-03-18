@@ -10,7 +10,7 @@ For my system I created a feedforward PI controller in a multi-threaded C++ prog
 
 `$ sudo ./pid_control`
 
-    -> Note that this script uses the C++ library JetsonGPIO, so it needs to be installed in order to use this.
+Note that this script uses the C++ library JetsonGPIO, so it needs to be installed in order to use this.
     
 I have also included other test scripts in the test_scripts folder that is used to test individual components of this car. There is also a servo_arduino_code folder for the arduino io code to command the servo.
 
