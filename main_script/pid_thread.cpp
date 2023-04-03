@@ -80,47 +80,6 @@ static bool end_this_program = false;
 
 void signalHandler(int s) { end_this_program = true; }
 
-
-// // read throttle encoder data in a separate thread
-// double throttle_encoder(std::ifstream& f_throttle){ 
-//     std::string str_throttle;
-//     std::string str_throttle_prev = "";
-//     int throttle_count = 0;
-//     double throttle_prev = 0.0;
-//     auto start = std::chrono::high_resolution_clock::now();
-//     while(f_throttle >> str_throttle){
-//         std::cout << "UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH" << std::endl;
-//         std::string s_throttle = str_throttle;
-//         // lock shared data until done writing the data
-//         // std::lock_guard<std::mutex>> lock(mtx);
-//         bool test1 = (!std::isalpha(s_throttle[0]) &&  str_throttle_prev[0] == 'd');
-//         bool test2 = s_throttle[0] == 'd';
-//         std::cout << "s_throttle: " << s_throttle << std::endl;
-//         std::cout << "bool 1: " << test1 << std::endl;
-//         std::cout << "bool 2: " << test2 << std::endl;
-//         std::cout << "s_throttle[0]: " << s_throttle[0] << std::endl;
-//         std::cout << "str_throttle_prev[0]: " << str_throttle_prev[0] << std::endl;
-//         if (!std::isalpha(s_throttle[0]) && str_throttle_prev[0] == 'd'){
-//             std::cout << "NOOOOOOOOOOOOORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << std::endl;
-//             if (s_throttle[0] != throttle_prev){
-//                 std::cout << "WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTT" << std::endl;
-//                 throttle_count += std::stod(s_throttle);
-//                 std::cout << "throttle count: " << throttle_count << std::endl;
-//             }
-//             throttle_prev = std::stod(s_throttle);
-//         }
-//         str_throttle_prev = s_throttle;
-//         std::cout << "str_throttle_prev[0]: " << str_throttle_prev[0] << std::endl;
-//         auto time_check = std::chrono::high_resolution_clock::now();
-//         double time_diff = std::chrono::duration_cast<std::chrono::nanoseconds>(time_check - start).count();
-//         // return 1.0;
-//         if (time_diff >= 3.0){
-//             // TODO: return vel instead of count (this is just a test)
-//             return throttle_count;
-//         }
-//     }
-// }
-
 std::string str_throttle_thread;
 std::string str_throttle_thread_prev = "";
 int throttle_thread_count = 0;
@@ -240,10 +199,6 @@ class PI{
 
 int main()
 {
-
-    // std::vector<std::string> data;
-    // std::thread reader(throttle_encoder, "");
-
     // read csv and store values
     std::fstream f_csv; 
 
@@ -276,11 +231,6 @@ int main()
             }
         }
     }
-
-
-    
-
-
 
     // Pin Definitions
     int output_pin = get_output_pin();
@@ -467,12 +417,6 @@ int main()
             delta_steer_update = 1;
             if (i == 0){
                 steer_current = steer.at(i);
-                // std::cout << "steer current wrong!: " << steer_current << std::endl;
-            }
-            // else{
-            //     steer_current = steer.at(i-1);
-            //     // std::cout << "steer current init: " << steer_current << std::endl;
-            // }
 
             throttle_enc = 0.0;
             error_throttle = 0.0;
@@ -486,55 +430,6 @@ int main()
                 std::cout << "throttle current init: " << throttle_current << std::endl;
             }
 
-
-
-            // read steer encoder
-            // f_steer.open("/dev/ttyACM1");
-            // std::cout << "opened steer encoder port" << std::endl;
-            // sleep(0.5);
-            // for (int n=1; n<5; n++){
-            //     if(f_steer >> str_steer){
-            //         std::string s_steer = str_steer;
-            //         if (n%4 == 0){
-            //             try{
-            //                 if (std::isalpha(s_steer[0])){
-            //                     throw std::invalid_argument("Not a num for steer enc");
-            //                 }
-            //                 else if(s_steer_prev[0] == 'd'){
-            //                     steer_enc = -std::stod(s_steer);
-            //                     if (steer_enc > 115){
-            //                         steer_enc = 0;
-            //                     }
-            //                     if (steer_enc < -115){
-            //                         steer_enc = 0;
-            //                     }
-            //                     std::cout << "yar" << std::endl;
-            //                     std::cout << "steer enc 1: " << steer_enc << std::endl;
-            //                 }
-            //             } catch (const std::invalid_argument& e){
-            //                 std::cout << "error steer: " << s_steer << std::endl;
-            //                 std::cout << "Error: " << e.what() << std::endl;
-            //                 end_this_program = true;
-            //                 p.stop();
-            //                 return 0;
-            //             }
-            //         }
-            //         s_steer_prev = s_steer;
-            //     }
-            // }
-
-            // if (future.valid() && future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
-            //     total_counts += future.get();
-            //     std::cout << "AHHHHHHHHHHHHHHHHHHH" << std::endl;
-            //     std::cout << "AHHHHHHHHHHHHHHHHHHH" << std::endl;
-            //     std::cout << "AHHHHHHHHHHHHHHHHHHH" << std::endl;
-            //     std::cout << "AHHHHHHHHHHHHHHHHHHH" << std::endl;
-            //     std::cout << "AHHHHHHHHHHHHHHHHHHH" << std::endl;
-            //     std::cout << "AHHHHHHHHHHHHHHHHHHH" << std::endl;
-            //     std::cout << "COUNTS !!!!: " << total_counts << std::endl;
-            // }
-
-
             data_mutex.lock();
             while(!data_queue.empty()){
                 throttle_vel = data_queue.front();
@@ -545,185 +440,6 @@ int main()
                 data_queue.pop();
             }
             data_mutex.unlock();
-
-
-
-            // while (!steer_enc_measured){
-            //     if(f_steer >> str_steer){
-            //         std::string s_steer = str_steer;
-            //         if (!std::isalpha(s_steer[0]) && s_steer_prev[0] == 'd'){
-            //             try{
-            //                 if (std::isalpha(s_steer[0])){
-            //                     throw std::invalid_argument("Not a num for steer enc");
-            //                 }
-            //                 else{
-            //                     steer_enc = -std::stod(s_steer);
-            //                     std::cout << "yar" << std::endl;
-            //                     std::cout << "steer enc 1: " << steer_enc << std::endl;
-            //                     steer_enc_measured = true;
-            //                 }
-            //             } catch (const std::invalid_argument& e){
-            //                 std::cout << "error steer: " << s_steer << std::endl;
-            //                 std::cout << "Error: " << e.what() << std::endl;
-            //                 // end_this_program = true;
-            //                 // p.stop();
-            //                 return 0;
-            //             }
-            //         }
-            //         s_steer_prev = s_steer;
-            //     }
-            // }
-            // std::cout << "test, out of steer enc !!: " << std::endl;
-            // steer_enc_measured = false;
-            // // sleep(0.5);
-            // // f_steer.close();
-
-
-
-            // while (!throttle_enc_measured){
-            //     if(f_throttle >> str_throttle){
-            //         std::string s_throttle = str_throttle;
-            //         if (!std::isalpha(s_throttle[0]) && s_throttle_prev[0] == 'd'){
-            //             try{
-            //                 if (std::isalpha(s_throttle[0])){
-            //                     throw std::invalid_argument("Not a num for steer enc");
-            //                 }
-            //                 else{
-            //                     // for (i=0; i<3; i++){
-            //                     // clock_gettime(CLOCK_REALTIME, &ts_throttle);
-            //                     // d_time = ts_throttle.tv_nsec - ts_first.tv_nsec; // - ts_throttle_prev;
-            //                     // dt_throttle += d_time;
-            //                     // ts_throttle_prev = ts.tv_sec;
-            //                     // std::cout << "time current: " << ts.tv_nsec << std::endl;
-            //                     // std::cout << "time first: " << ts_first.tv_nsec << std::endl;
-            //                     // std::cout << "time prev: " << ts_throttle_prev << std::endl;
-            //                     // std::cout << "dt: " << d_time << std::endl;
-            //                     // ts_throttle_prev = d_time;
-            //                     throttle_enc = -std::stod(s_throttle);
-            //                     // throttle_enc_prev += throttle_enc;
-            //                     std::cout << "throttle enc !!: " << throttle_enc << std::endl;
-            //                     std::cout << "!!! throttle divided by resolution !!: " << (throttle_enc/(2048.0*4.0)) << std::endl;
-            //                     // std::cout << "throttle prev !!: " << throttle_enc_prev << std::endl;
-
-            //                     std::cout << "!!! dt time stamp nanosec!!!: " << d_time << std::endl;
-            //                     // }
-
-            //                     double throt = ((throttle_enc/(2048.0*4.0))/d_time);
-            //                     std::cout << "throttle speed !!: " << throt << std::endl;
-            //                     stored_enc_throttle.push_back(throt);
-
-            //                     if (throttle_enc != throttle_prev){
-            //                         count_th ++;
-            //                     }
-
-            //                     throttle_prev = throttle_enc;
-
-            //                     // //check
-            //                     // double current_throttle = correction.convert_throttle(throt);
-            //                     // std::cout << "throttle current: " << current_throttle << std::endl;
-            //                     // double error_throttle = correction.check_throttle(current_throttle, throttle.at(i));
-            //                     // std::cout << "throttle error: " << error_throttle << std::endl;
-
-            //                     // //update
-            //                     // delta_throttle_update = correction.update_throttle(error_throttle, dt_throttle);;
-            //                     // current_throttle += delta_steer_update;
-            //                     // std::cout << "throttle correction: " << current_throttle << std::endl;
-
-            //                     val = throttle.at(i);
-            //                     //std::cout << "throttle command: " << throttle.at(i) << std::endl;
-            //                     p.ChangeDutyCycle(throttle.at(i));
-
-            //                     // d_time = 0.0;
-            //                     throttle_enc_prev = 0.0;
-            //                     count_throttle = 0;
-            //                     dt_throttle = 0.0;
-
-            //                     throttle_enc_measured = true;
-            //                 }
-            //             } catch (const std::invalid_argument& e){
-            //                 std::cout << "error throttle: " << s_throttle << std::endl;
-            //                 std::cout << "Error: " << e.what() << std::endl;
-            //                 // end_this_program = true;
-            //                 // p.stop();
-            //                 return 0;
-            //             }
-            //         }
-            //         s_throttle_prev = s_throttle;
-            //     }
-            // }
-            // std::cout << "test, out of throttle enc !!: " << std::endl;
-            // throttle_enc_measured = false;
-
-
-            // for (int k=1; k<5; k++){
-            //     if(f_throttle >> str_throttle){
-            //         std::cout << "test, in throttle !!: " << std::endl;
-            //         std::string s_throttle = str_throttle;
-            //         std::cout << "k:  " << k << std::endl;
-            //         if (k%4 == 0){
-            //             try{
-            //                 if (std::isalpha(s_throttle[0])){
-            //                     throw std::invalid_argument("Not a num for steer enc");
-            //                 }
-            //                 else if(s_steer_prev[0] == 'd'){
-            //                     clock_gettime(CLOCK_REALTIME, &ts_throttle);
-            //                     double d_time = ts_throttle.tv_sec - ts_first.tv_sec - ts_throttle_prev;
-            //                     dt_throttle += d_time;
-            //                     ts_throttle_prev = ts.tv_sec;
-            //                     // std::cout << "time current: " << ts.tv_nsec << std::endl;
-            //                     // std::cout << "time first: " << ts_first.tv_nsec << std::endl;
-            //                     // std::cout << "time prev: " << ts_throttle_prev << std::endl;
-            //                     // std::cout << "dt: " << d_time << std::endl;
-            //                     ts_throttle_prev = ts.tv_nsec;
-            //                     throttle_enc = -std::stod(s_throttle);
-            //                     throttle_enc_prev += throttle_enc;
-            //                     std::cout << "throttle enc !!: " << throttle_enc << std::endl;
-            //                     std::cout << "!!! throttle divided by resolution !!: " << (throttle_enc/(2048.0*4.0)) << std::endl;
-            //                     std::cout << "throttle prev !!: " << throttle_enc_prev << std::endl;
-
-            //                     std::cout << "!!! dt time stamp !!!: " << d_time << std::endl;
-
-            //                     if (count_throttle == 15){
-
-            //                         double throt = ((throttle_enc_prev/(2048.0*4.0))/d_time);
-            //                         std::cout << "throttle speed !!: " << throt << std::endl;
-
-            //                         //check
-            //                         double current_throttle = correction.convert_throttle(throt);
-            //                         std::cout << "throttle current: " << current_throttle << std::endl;
-            //                         double error_throttle = correction.check_throttle(current_throttle, throttle.at(i));
-            //                         std::cout << "throttle error: " << error_throttle << std::endl;
-
-            //                         //update
-            //                         delta_throttle_update = correction.update_throttle(error_throttle, dt_throttle);;
-            //                         current_throttle += delta_steer_update;
-            //                         std::cout << "throttle correction: " << current_throttle << std::endl;
-
-            //                         val = throttle.at(i);
-            //                         //std::cout << "throttle command: " << throttle.at(i) << std::endl;
-            //                         p.ChangeDutyCycle(throttle.at(i));
-
-            //                         // d_time = 0.0;
-            //                         throttle_enc_prev = 0.0;
-            //                         count_throttle = 0;
-            //                         dt_throttle = 0.0;
-            //                     }
-            //                 }
-            //             } catch (const std::invalid_argument& e){
-            //                 std::cout << "error throttle: " << s_throttle << std::endl;
-            //                 std::cout << "Error: " << e.what() << std::endl;
-            //                 end_this_program = true;
-            //                 p.stop();
-            //                 return 0;
-            //             }
-            //         }
-            //         s_throttle_prev = s_throttle;
-            //     }
-            // }
-            // count_throttle++;
-
-
-
 
             // std::cout << "steer enc !!!: " << steer_enc + 65 << std::endl;
             error_steer = correction.check_steer((steer_current), steer.at(i));
@@ -765,15 +481,6 @@ int main()
         my_serial << 65 << std::endl;
         std::cout << 65 << std::endl;
         sleep(0.5);
-
-        // // store values in csv
-        // std::ofstream file("training_data.csv");
-
-        // file << "encoder_pos,commanded_velocity,steering_angle" << std::endl;
-        // for (int i=0; i < stored_throttle.size(); i++){
-        //     file << stored_enc_throttle.at(i) << ',' << stored_throttle.at(i) << ',' << stored_steer.at(i) << std::endl;
-        // }
-        // file.close();
 
 
         GPIO::cleanup();
